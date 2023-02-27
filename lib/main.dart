@@ -22,6 +22,18 @@ void testConnection()async {
   //ChatUserService().getStream(true);
   //ChatMessageService().testInsert();
   //ChatMessageService().fromSupabase(true);
+
+  // UID of User 'Alpha'
+  var alpha = 'd529d88d-32e6-4eed-9802-0b13fb1b19a6';
+  // UID of User 'Beta'
+  var beta = '180cfcbe-ee1a-4c69-9abe-1efb6e38dd3c';
+  // UID of User 'Gamma'
+  var gamma = '1bd7c365-ada9-45a5-b391-a819fd3bc67b';
+
+  ChatMessageService().loadConvo(
+      beta,
+      gamma,
+      true);
   //ChatMessageService().getStream(true);
 }
 

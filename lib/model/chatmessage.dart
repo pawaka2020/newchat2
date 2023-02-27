@@ -74,10 +74,8 @@ class ChatMessage {
       //'uid': uid,
       'sender_uid': senderUid,
       'recipient_uid': recipientUid,
-      //'message': message,
-      'message' : sc.encrypt(message),
-      //'file_url': fileUrl,
-      'file_url' : sc.encrypt(fileUrl),
+      'message': message,
+      'file_url': fileUrl,
       'date_sent': dateSent.toIso8601String(),
     };
   }
@@ -88,10 +86,8 @@ class ChatMessage {
       uid: map['uid'],
       senderUid: map['sender_uid'],
       recipientUid: map['recipient_uid'],
-      //message: map['message'],
-      message:sc.decrypt(map['message']),
-      //fileUrl: map['file_url'] ?? '',
-      fileUrl:sc.decrypt(map['file_url']) ?? '',
+      message: map['message'],
+      fileUrl: map['file_url'] ?? '',
       dateSent: DateTime.parse(map['date_sent']),
     );
   }
@@ -102,21 +98,6 @@ class ChatMessageService{
   Future<void> toSupabase(ChatMessage message) async {
     await supabaseClient.from('chat_messages').insert(message.toMap());
     debugPrint("ChatMessage object inserted");
-  }
-
-  Future<List> fromSupabase(bool test) async {
-    final response = await supabaseClient.from('chat_messages').select();
-    List<dynamic> jsonArray = jsonDecode(jsonEncode(response));
-    List<ChatMessage> result = jsonArray.map((e) =>
-        ChatMessage.fromMap(e)).toList();
-    if (test == true) {
-      for (var chat in result) {
-        debugPrint(chat.senderUid);
-        debugPrint(chat.message);
-        debugPrint(chat.fileUrl);
-      }
-    }
-    return result;
   }
 
   Stream<List<ChatMessage>> getStream(bool test) {
@@ -152,7 +133,6 @@ class ChatMessageService{
         fileUrl: fileUrl,
         dateSent: DateTime.now());
   }
-
   Future<void> testInsert() async {
     // UID of User 'Alpha'
     var alphaUid = 'd529d88d-32e6-4eed-9802-0b13fb1b19a6';
@@ -187,5 +167,56 @@ class ChatMessageService{
     var message8 = create(gammaUid, betaUid, "Fine, stop talking to me. :(", '');
     await toSupabase(message8);
   }
+
+  Future<List> fromSupabase(bool test) async {
+    final response = await supabaseClient.from('chat_messages').select();
+    List<dynamic> jsonArray = jsonDecode(jsonEncode(response));
+    List<ChatMessage> result = jsonArray.map((e) =>
+        ChatMessage.fromMap(e)).toList();
+    if (test == true) {
+      for (var chat in result) {
+        debugPrint(chat.senderUid);
+        debugPrint(chat.message);
+        debugPrint(chat.fileUrl);
+      }
+    }
+    return result;
+  }
+
+  Future<List<ChatMessage>> loadConvo(String uid1, String uid2, bool test) async {
+    final query1 = supabaseClient
+        .from('chat_messages')
+        .select()
+        .eq('sender_uid', uid1)
+        .eq('recipient_uid', uid2);
+        //.order('date_sent');
+
+    final query2 = supabaseClient
+        .from('chat_messages')
+        .select()
+        .eq('sender_uid', uid2)
+        .eq('recipient_uid', uid1);
+        //.order('date_sent');
+
+    final response = await Future.wait([query1.execute(), query2.execute()]);
+    final jsonArray = response.expand((res) => res.data).toList();
+    jsonArray.sort((a, b) => a['date_sent'].compareTo(b['date_sent']));
+
+    final result = jsonArray.map((e) => ChatMessage.fromMap(e)).toList();
+
+    if (test == true) {
+      for (var chat in result) {
+        debugPrint(chat.senderUid);
+        debugPrint(chat.message);
+        debugPrint(chat.fileUrl);
+      }
+    }
+
+    return result;
+  }
+
+}
+
+class PMService{
 
 }
